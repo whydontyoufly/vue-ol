@@ -22,9 +22,10 @@ import { transform, get as getProjection,fromLonLat } from "ol/proj";
 import {createXYZ} from "ol/tileGrid.js";
 import TileGrid from 'ol/tilegrid/TileGrid.js';
 import {Atlas,AtlasManager,Circle as CircleStyle,Fill,Icon,IconImage,Image,RegularShape,Stroke,Style,Text} from 'ol/style.js';
-import {MVT} from 'ol/format';
+import {MVT,GeoJSON,EsriJSON,GML,GPX,IGC,KML,OWS,Polyline as PolylineFormat,TopoJSON} from 'ol/format';
 import {Point} from 'ol/geom.js'
 import Feature from 'ol/Feature.js'
+import {bbox as bboxStrategy} from 'ol/loadingstrategy.js'
 export default {
   name: "HelloWorld",
   data() {
@@ -51,6 +52,27 @@ export default {
           projection: "EPSG:4326"
         })
       });
+    },
+    getWFSLayer(){
+      let vectorSource = new VectorSource({
+        format:new GeoJSON(),
+        url:function(extent){
+          return 'http://127.0.0.1:9090/geoserver/cq/ows?service=WFS&version=1.0.0&request=GetFeature'+
+                  '&typeName=cq:cq_district&outputFormat=application/json'+
+                  '&bbox='+extent.join(',')+',EPSG:4326';
+        },
+        strategy:bboxStrategy
+      });
+
+      return new VectorLayer({
+        source:vectorSource,
+        style:new Style({
+          stroke: new Stroke({
+            color: 'rgba(0, 0, 255, 1.0)',
+            width: 2
+          })
+        })
+      })
     },
     addBound() {
       const wmsSrc = new TileWMS({
@@ -242,10 +264,13 @@ export default {
     }
   },
   mounted() {
-    this.addBDMap();
-    // this.initMap();
+    // this.addBDMap();
+    this.initMap();
+    let wfsLayer = this.getWFSLayer();
+    this.map.addLayer(wfsLayer);
+
     // this.addDistrict();
-    // this.addBound();
+    this.addBound();
     // this.addLayerGroup();
     // this.addWMTS();
     // this.addVectorTile();
